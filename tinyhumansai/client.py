@@ -1,4 +1,4 @@
-"""Alphahuman Memory client for Python."""
+"""TinyHumans memory client for Python."""
 
 from __future__ import annotations
 
@@ -7,9 +7,9 @@ from typing import Any, Optional
 
 import httpx
 
-from alphahuman_memory.types import (
-    AlphahumanConfig,
-    AlphahumanError,
+from .types import (
+    TinyHumanConfig,
+    TinyHumanError,
     BASE_URL_ENV,
     DEFAULT_BASE_URL,
     DeleteMemoryRequest,
@@ -22,14 +22,14 @@ from alphahuman_memory.types import (
 )
 
 
-class AlphahumanMemoryClient:
-    """Synchronous client for the Alphahuman Memory API.
+class TinyHumanMemoryClient:
+    """Synchronous client for the TinyHumans memory API.
 
     Args:
         config: Connection configuration (token required, base_url optional).
     """
 
-    def __init__(self, config: AlphahumanConfig) -> None:
+    def __init__(self, config: TinyHumanConfig) -> None:
         if not config.token or not config.token.strip():
             raise ValueError("token is required")
         base_url = config.base_url or os.environ.get(BASE_URL_ENV) or DEFAULT_BASE_URL
@@ -66,7 +66,7 @@ class AlphahumanMemoryClient:
 
         Raises:
             ValueError: If items list is empty.
-            AlphahumanError: On API errors.
+            TinyHumanError: On API errors.
         """
         if not request.items:
             raise ValueError("items must be a non-empty list")
@@ -101,7 +101,7 @@ class AlphahumanMemoryClient:
             List of matching memory items and count.
 
         Raises:
-            AlphahumanError: On API errors.
+            TinyHumanError: On API errors.
         """
         params: list[tuple[str, str]] = []
         if request:
@@ -138,7 +138,7 @@ class AlphahumanMemoryClient:
 
         Raises:
             ValueError: If no deletion target is specified.
-            AlphahumanError: On API errors.
+            TinyHumanError: On API errors.
         """
         has_key = isinstance(request.key, str) and len(request.key) > 0
         has_keys = isinstance(request.keys, list) and len(request.keys) > 0
@@ -174,12 +174,15 @@ class AlphahumanMemoryClient:
         try:
             payload = response.json()
         except Exception:
-            raise AlphahumanError(
+            raise TinyHumanError(
                 f"HTTP {response.status_code}: non-JSON response",
                 response.status_code,
                 response.text,
             )
         if not response.is_success:
             message = payload.get("error", f"HTTP {response.status_code}")
-            raise AlphahumanError(message, response.status_code, payload)
+            raise TinyHumanError(message, response.status_code, payload)
         return payload["data"]
+
+# Backwards-compatible alias
+AlphahumanMemoryClient = TinyHumanMemoryClient

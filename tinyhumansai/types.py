@@ -1,4 +1,4 @@
-"""Type definitions for the Alphahuman Memory SDK."""
+"""Type definitions for the TinyHumans Python SDK."""
 
 from __future__ import annotations
 
@@ -13,14 +13,14 @@ BASE_URL_ENV = "ALPHAHUMAN_BASE_URL"
 
 
 @dataclass
-class AlphahumanConfig:
-    """Configuration for the Alphahuman Memory client."""
+class TinyHumanConfig:
+    """Configuration for the TinyHumans client."""
 
     token: str
     """Bearer token (JWT or API key) for authentication."""
 
     base_url: Optional[str] = None
-    """Base URL of the Alphahuman backend. If None, uses ALPHAHUMAN_BASE_URL env var or default staging URL."""
+    """Base URL of the backend. If None, uses ALPHAHUMAN_BASE_URL env var or default staging URL."""
 
 
 @dataclass
@@ -114,8 +114,8 @@ class DeleteMemoryResponse:
     deleted: int
 
 
-class AlphahumanError(Exception):
-    """Error raised by the Alphahuman Memory API."""
+class TinyHumanError(Exception):
+    """Error raised by the TinyHumans API."""
 
     def __init__(self, message: str, status: int, body: Any = None) -> None:
         super().__init__(message)

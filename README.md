@@ -1,6 +1,6 @@
-# alphahuman-memory
+# tinyhuman
 
-Python SDK for the [Alphahuman Memory API](https://alphahuman.xyz).
+Python SDK for the [TinyHumans API](https://tinyhumans.ai).
 
 ## Requirements
 
@@ -10,22 +10,22 @@ Python SDK for the [Alphahuman Memory API](https://alphahuman.xyz).
 ## Install
 
 ```bash
-pip install alphahuman-memory
+pip install tinyhuman
 ```
 
 ## Quick start (synchronous)
 
 ```python
-from alphahuman_memory import (
-    AlphahumanMemoryClient,
-    AlphahumanConfig,
+from tinyhumansai import (
+    TinyHumanMemoryClient,
+    TinyHumanConfig,
     IngestMemoryRequest,
     ReadMemoryRequest,
     DeleteMemoryRequest,
     MemoryItem,
 )
 
-client = AlphahumanMemoryClient(AlphahumanConfig(token="your-api-key"))
+client = TinyHumanMemoryClient(TinyHumanConfig(token="your-api-key"))
 
 # Ingest (upsert) memory
 result = client.ingest_memory(
@@ -56,21 +56,21 @@ client.delete_memory(DeleteMemoryRequest(delete_all=True))
 The client implements the context-manager protocol for deterministic cleanup:
 
 ```python
-with AlphahumanMemoryClient(AlphahumanConfig(token="your-api-key")) as client:
+with TinyHumanMemoryClient(TinyHumanConfig(token="your-api-key")) as client:
     result = client.read_memory()
 ```
 
 ## Async usage
 
-Use `AsyncAlphahumanMemoryClient` inside `async` code to avoid blocking the
+Use `AsyncTinyHumanMemoryClient` inside `async` code to avoid blocking the
 event loop (e.g. FastAPI, LangGraph async pipelines):
 
 ```python
 import asyncio
-from alphahuman_memory import AsyncAlphahumanMemoryClient, AlphahumanConfig, ReadMemoryRequest
+from tinyhumansai import AsyncTinyHumanMemoryClient, TinyHumanConfig, ReadMemoryRequest
 
 async def main():
-    async with AsyncAlphahumanMemoryClient(AlphahumanConfig(token="your-api-key")) as client:
+    async with AsyncTinyHumanMemoryClient(TinyHumanConfig(token="your-api-key")) as client:
         result = await client.read_memory()
         print(result.items)
 
@@ -79,7 +79,7 @@ asyncio.run(main())
 
 ## API reference
 
-### `AlphahumanMemoryClient(config)` / `AsyncAlphahumanMemoryClient(config)`
+### `TinyHumanMemoryClient(config)` / `AsyncTinyHumanMemoryClient(config)`
 
 | Param | Type | Required | Description |
 |-------|------|----------|-------------|
@@ -107,13 +107,13 @@ Returns `DeleteMemoryResponse(deleted)`.
 ## Error handling
 
 ```python
-from alphahuman_memory import AlphahumanError
+from tinyhumansai import TinyHumanError
 
 try:
     client.read_memory()
-except AlphahumanError as e:
+except TinyHumanError as e:
     print(e.status, str(e))
 ```
 
-`AlphahumanError` carries `.status` (HTTP status code) and `.body` (parsed
+`TinyHumanError` carries `.status` (HTTP status code) and `.body` (parsed
 response or raw text for non-JSON responses such as gateway errors).

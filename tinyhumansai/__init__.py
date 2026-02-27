@@ -1,10 +1,10 @@
-"""Alphahuman Memory SDK for Python."""
+"""TinyHumans Python SDK."""
 
-from alphahuman_memory.async_client import AsyncAlphahumanMemoryClient
-from alphahuman_memory.client import AlphahumanMemoryClient
-from alphahuman_memory.types import (
-    AlphahumanConfig,
-    AlphahumanError,
+from .async_client import AsyncTinyHumanMemoryClient, AsyncAlphahumanMemoryClient
+from .client import TinyHumanMemoryClient, AlphahumanMemoryClient
+from .types import (
+    TinyHumanConfig,
+    TinyHumanError,
     DeleteMemoryRequest,
     DeleteMemoryResponse,
     IngestMemoryRequest,
@@ -16,10 +16,15 @@ from alphahuman_memory.types import (
 )
 
 __all__ = [
+    # Preferred TinyHuman names
+    "TinyHumanMemoryClient",
+    "AsyncTinyHumanMemoryClient",
+    "TinyHumanConfig",
+    "TinyHumanError",
+    # Backwards-compatible Alphahuman names
     "AlphahumanMemoryClient",
     "AsyncAlphahumanMemoryClient",
-    "AlphahumanConfig",
-    "AlphahumanError",
+    # Shared types
     "DeleteMemoryRequest",
     "DeleteMemoryResponse",
     "IngestMemoryRequest",
