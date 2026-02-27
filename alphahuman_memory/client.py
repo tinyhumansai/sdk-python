@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 from typing import Any, Optional
 
 import httpx
@@ -9,6 +10,8 @@ import httpx
 from alphahuman_memory.types import (
     AlphahumanConfig,
     AlphahumanError,
+    BASE_URL_ENV,
+    DEFAULT_BASE_URL,
     DeleteMemoryRequest,
     DeleteMemoryResponse,
     IngestMemoryRequest,
@@ -29,7 +32,8 @@ class AlphahumanMemoryClient:
     def __init__(self, config: AlphahumanConfig) -> None:
         if not config.token or not config.token.strip():
             raise ValueError("token is required")
-        self._base_url = config.base_url.rstrip("/")
+        base_url = config.base_url or os.environ.get(BASE_URL_ENV) or DEFAULT_BASE_URL
+        self._base_url = base_url.rstrip("/")
         self._token = config.token
         self._http = httpx.Client(
             base_url=self._base_url,
