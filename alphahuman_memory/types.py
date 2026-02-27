@@ -6,7 +6,10 @@ from dataclasses import dataclass, field
 from typing import Any, Optional
 
 
-DEFAULT_BASE_URL = "https://api.alphahuman.xyz"
+DEFAULT_BASE_URL = "https://staging-api.alphahuman.xyz"
+
+# Environment variable for base URL override (e.g. from .env)
+BASE_URL_ENV = "ALPHAHUMAN_BASE_URL"
 
 
 @dataclass
@@ -16,8 +19,8 @@ class AlphahumanConfig:
     token: str
     """Bearer token (JWT or API key) for authentication."""
 
-    base_url: str = DEFAULT_BASE_URL
-    """Base URL of the Alphahuman backend (default: https://api.alphahuman.xyz)."""
+    base_url: Optional[str] = None
+    """Base URL of the Alphahuman backend. If None, uses ALPHAHUMAN_BASE_URL env var or default staging URL."""
 
 
 @dataclass

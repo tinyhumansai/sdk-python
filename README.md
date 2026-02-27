@@ -84,7 +84,7 @@ asyncio.run(main())
 | Param | Type | Required | Description |
 |-------|------|----------|-------------|
 | `config.token` | `str` | ✓ | JWT or API key |
-| `config.base_url` | `str` | | Override API URL (default: `https://api.alphahuman.xyz`) |
+| `config.base_url` | `str` | | Override API URL. If not set, uses `ALPHAHUMAN_BASE_URL` from env (e.g. `.env`) or default `https://staging-api.alphahuman.xyz` |
 
 ### `client.ingest_memory(request)`
 
