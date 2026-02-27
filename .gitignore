@@ -23,6 +23,9 @@ htmlcov/
 .mypy_cache/
 .pytype/
 
+# Ruff
+.ruff_cache/
+
 # Editors
 .DS_Store
 .idea/
