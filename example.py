@@ -1,4 +1,5 @@
 import tinyhumansai as api
+import time
 
 client = api.TinyHumanMemoryClient(token="your-api-key", model_id="neocortex-mk1")
 
@@ -10,6 +11,8 @@ result = client.ingest_memory(
             "content": "User prefers dark mode",
             "namespace": "preferences",
             "metadata": {"source": "onboarding"},
+            "created_at": time.time(),  # Optional: Unix timestamp (seconds)
+            "updated_at": time.time(),  # Optional: Unix timestamp (seconds)
         }
     ]
 )

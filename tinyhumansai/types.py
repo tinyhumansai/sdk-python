@@ -42,6 +42,12 @@ class MemoryItem:
     metadata: dict[str, Any] = field(default_factory=dict)
     """Arbitrary metadata."""
 
+    created_at: Optional[float] = None
+    """Optional Unix timestamp (seconds) for when this memory was created."""
+
+    updated_at: Optional[float] = None
+    """Optional Unix timestamp (seconds) for when this memory was last updated."""
+
 
 @dataclass
 class IngestMemoryResponse:

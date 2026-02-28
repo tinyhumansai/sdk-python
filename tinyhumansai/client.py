@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import os
+import time
 from typing import Any, Optional, Sequence, Union
 
 import httpx
@@ -19,6 +20,55 @@ from .types import (
     MemoryItem,
     ReadMemoryItem,
 )
+
+
+def _validate_timestamp(value: Optional[float], name: str) -> None:
+    """Validate a Unix timestamp (seconds).
+
+    Args:
+        value: Timestamp to validate (None is allowed).
+        name: Field name for error messages.
+
+    Raises:
+        ValueError: If timestamp is invalid.
+    """
+    if value is None:
+        return
+    if not isinstance(value, (int, float)):
+        raise ValueError(
+            f"{name} must be a number (Unix timestamp in seconds), got {type(value).__name__}"
+        )
+    if value < 0:
+        raise ValueError(
+            f"{name} must be non-negative (Unix timestamp in seconds), got {value}"
+        )
+    # Reject timestamps that are too far in the future (e.g., > 100 years from now)
+    max_future = time.time() + (100 * 365 * 24 * 60 * 60)
+    if value > max_future:
+        raise ValueError(
+            f"{name} is too far in the future (max ~100 years), got {value}"
+        )
+
+
+def _validate_timestamps(
+    created_at: Optional[float], updated_at: Optional[float]
+) -> None:
+    """Validate created_at and updated_at timestamps together.
+
+    Args:
+        created_at: Creation timestamp (None is allowed).
+        updated_at: Update timestamp (None is allowed).
+
+    Raises:
+        ValueError: If timestamps are invalid or inconsistent.
+    """
+    _validate_timestamp(created_at, "created_at")
+    _validate_timestamp(updated_at, "updated_at")
+    if created_at is not None and updated_at is not None:
+        if updated_at < created_at:
+            raise ValueError(
+                f"updated_at ({updated_at}) must be >= created_at ({created_at})"
+            )
 
 
 class TinyHumanMemoryClient:
@@ -77,7 +127,8 @@ class TinyHumanMemoryClient:
         Args:
             items: Items to upsert. Each item can be a `MemoryItem` or a dict with
                 keys: `key` (str), `content` (str), optional `namespace` (str),
-                optional `metadata` (dict).
+                optional `metadata` (dict), optional `created_at` (float, Unix seconds),
+                optional `updated_at` (float, Unix seconds).
 
         Returns:
             Counts of ingested, updated, and errored items.
@@ -92,23 +143,33 @@ class TinyHumanMemoryClient:
         normalized: list[dict[str, Any]] = []
         for item in items:
             if isinstance(item, MemoryItem):
-                normalized.append(
-                    {
-                        "key": item.key,
-                        "content": item.content,
-                        "namespace": item.namespace,
-                        "metadata": item.metadata,
-                    }
-                )
+                _validate_timestamps(item.created_at, item.updated_at)
+                item_dict: dict[str, Any] = {
+                    "key": item.key,
+                    "content": item.content,
+                    "namespace": item.namespace,
+                    "metadata": item.metadata,
+                }
+                if item.created_at is not None:
+                    item_dict["createdAt"] = item.created_at
+                if item.updated_at is not None:
+                    item_dict["updatedAt"] = item.updated_at
+                normalized.append(item_dict)
             elif isinstance(item, dict):
-                normalized.append(
-                    {
-                        "key": item["key"],
-                        "content": item["content"],
-                        "namespace": item.get("namespace", "default"),
-                        "metadata": item.get("metadata", {}),
-                    }
-                )
+                created_at = item.get("createdAt") or item.get("created_at")
+                updated_at = item.get("updatedAt") or item.get("updated_at")
+                _validate_timestamps(created_at, updated_at)
+                item_dict = {
+                    "key": item["key"],
+                    "content": item["content"],
+                    "namespace": item.get("namespace", "default"),
+                    "metadata": item.get("metadata", {}),
+                }
+                if created_at is not None:
+                    item_dict["createdAt"] = created_at
+                if updated_at is not None:
+                    item_dict["updatedAt"] = updated_at
+                normalized.append(item_dict)
             else:
                 raise TypeError("items must be MemoryItem or dict")
 
