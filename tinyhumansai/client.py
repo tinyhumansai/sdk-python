@@ -89,7 +89,9 @@ class TinyHumanMemoryClient:
             errors=data["errors"],
         )
 
-    def read_memory(self, request: Optional[ReadMemoryRequest] = None) -> ReadMemoryResponse:
+    def read_memory(
+        self, request: Optional[ReadMemoryRequest] = None
+    ) -> ReadMemoryResponse:
         """Read memory items by key, keys, or namespace.
 
         Returns all user memory if no filters are provided.
@@ -183,6 +185,7 @@ class TinyHumanMemoryClient:
             message = payload.get("error", f"HTTP {response.status_code}")
             raise TinyHumanError(message, response.status_code, payload)
         return payload["data"]
+
 
 # Backwards-compatible alias
 AlphahumanMemoryClient = TinyHumanMemoryClient

@@ -22,7 +22,9 @@ items = client.read_memory(api.ReadMemoryRequest(namespace="preferences"))
 print(items.count, items.items)
 
 # Delete by key
-client.delete_memory(api.DeleteMemoryRequest(key="user-preference-theme", namespace="preferences"))
+client.delete_memory(
+    api.DeleteMemoryRequest(key="user-preference-theme", namespace="preferences")
+)
 
 # Delete all user memory
 client.delete_memory(api.DeleteMemoryRequest(delete_all=True))

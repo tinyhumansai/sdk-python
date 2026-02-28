@@ -172,7 +172,9 @@ class AsyncTinyHumanMemoryClient:
         response = await self._http.get(path, params=params)
         return self._parse_response(response)
 
-    async def _send(self, method: str, path: str, body: dict[str, Any]) -> dict[str, Any]:
+    async def _send(
+        self, method: str, path: str, body: dict[str, Any]
+    ) -> dict[str, Any]:
         response = await self._http.request(method, path, json=body)
         return self._parse_response(response)
 
@@ -190,6 +192,6 @@ class AsyncTinyHumanMemoryClient:
             raise TinyHumanError(message, response.status_code, payload)
         return payload["data"]
 
+
 # Backwards-compatible alias
 AsyncAlphahumanMemoryClient = AsyncTinyHumanMemoryClient
-
