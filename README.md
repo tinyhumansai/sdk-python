@@ -17,28 +17,22 @@ Requires Python 3.9+. The only runtime dependency is [httpx](https://www.python-
 ```python
 import tinyhumansai as api
 
-client = api.TinyHumanMemoryClient(
-    token="your-api-key",
-    model_id="neocortex-mk1",
-)
+client = api.TinyHumanMemoryClient("YOUR_APIKEY_HERE")
 
-# Store a memory
-client.ingest_memory(
-    items=[
-        {
-            "key": "user-preference-theme",
-            "content": "User prefers dark mode",
-            "namespace": "preferences",
-            "metadata": {"source": "onboarding"},
-        }
-    ]
-)
+# Store a single memory
+client.ingest_memory({
+    "key": "user-preference-theme",
+    "content": "User prefers dark mode",
+    "namespace": "preferences",
+    "metadata": {"source": "onboarding"},
+})
 
-# Retrieve context for an LLM prompt
-ctx = client.get_context(namespace="preferences")
-print(ctx.context)
-# [preferences:user-preference-theme]
-# User prefers dark mode
+# Ask a LLM something from the memory
+response = client.recall_with_llm(
+    prompt="What is the user's preference for theme?",
+    api_key="OPENAI_API_KEY"
+)
+print(response.text) # The user prefers dark mode
 ```
 
 ## Core concepts
@@ -74,56 +68,68 @@ The client supports the context-manager protocol for automatic cleanup:
 
 ```python
 with api.TinyHumanMemoryClient(token="...", model_id="...") as client:
-    ctx = client.get_context(namespace="preferences")
+    ctx = client.recall_memory(namespace="preferences", prompt="User preferences", num_chunks=10)
 ```
 
 ### `ingest_memory`
 
-Upsert one or more memory items. Items are deduped by `(namespace, key)` -- if a match exists, it is updated; otherwise a new item is created.
+Upsert a single memory item. The item is deduped by `(namespace, key)` -- if a match exists, it is updated; otherwise a new item is created.
 
 ```python
 result = client.ingest_memory(
-    items=[
-        {
-            "key": "fav-color",
-            "content": "User's favorite color is blue",
-            "namespace": "preferences",
-        }
-    ]
+    item={
+        "key": "fav-color",
+        "content": "User's favorite color is blue",
+        "namespace": "preferences",
+    }
 )
 print(result.ingested, result.updated, result.errors)
 ```
 
-You can also use the `MemoryItem` dataclass:
+With the `MemoryItem` dataclass:
 
 ```python
 from tinyhumansai import MemoryItem
 
 result = client.ingest_memory(
-    items=[
-        MemoryItem(key="fav-color", content="Blue", namespace="preferences")
-    ]
+    item=MemoryItem(key="fav-color", content="Blue", namespace="preferences")
 )
 ```
 
-### `get_context`
+### `ingest_memories`
 
-Fetch stored memories and return them as an LLM-friendly context string. `namespace` is required.
+Upsert multiple memory items in one call. Items are deduped by `(namespace, key)`.
 
 ```python
-# All memories in a namespace
-ctx = client.get_context(namespace="preferences")
+result = client.ingest_memories(
+    items=[
+        {"key": "fav-color", "content": "Blue", "namespace": "preferences"},
+        {"key": "fav-food", "content": "Pizza", "namespace": "preferences"},
+    ]
+)
+print(result.ingested, result.updated, result.errors)
+```
 
-# Filter by specific key(s) within namespace
-ctx = client.get_context(namespace="preferences", key="fav-color")
-ctx = client.get_context(namespace="preferences", keys=["fav-color", "fav-food"])
+### `recall_memory`
 
-# Limit number of items
-ctx = client.get_context(namespace="preferences", max_items=10)
+Fetch relevant memory chunks using a prompt and return them as an LLM-friendly context string. The API uses the prompt to retrieve the most relevant chunks from the namespace.
 
+```python
+# Fetch up to 10 chunks relevant to the prompt
+ctx = client.recall_memory(
+    namespace="preferences",
+    prompt="What is the user's favorite color?",
+    num_chunks=10,
+)
 print(ctx.context)  # Formatted string
 print(ctx.items)    # List of ReadMemoryItem objects
 print(ctx.count)    # Number of items
+
+# Optional: fetch more or fewer chunks
+ctx = client.recall_memory(namespace="preferences", prompt="User preferences", num_chunks=5)
+
+# Optional: filter by specific key(s) instead of prompt-based retrieval
+ctx = client.recall_memory(namespace="preferences", prompt="", key="fav-color", num_chunks=10)
 ```
 
 ### `delete_memory`
@@ -141,15 +147,15 @@ client.delete_memory(namespace="preferences", keys=["fav-color", "fav-food"])
 client.delete_memory(namespace="preferences", delete_all=True)
 ```
 
-### `query_llm` (optional)
+### `recall_with_llm` (optional)
 
 Query an LLM provider with your stored context injected -- no extra SDK dependencies needed. Supports OpenAI, Anthropic, and Google Gemini out of the box, plus any OpenAI-compatible endpoint.
 
 ```python
-ctx = client.get_context(namespace="preferences")
+ctx = client.recall_memory(namespace="preferences", prompt="User preferences", num_chunks=10)
 
 # OpenAI
-response = client.query_llm(
+response = client.recall_with_llm(
     prompt="What is the user's favorite color?",
     provider="openai",
     model="gpt-4o-mini",

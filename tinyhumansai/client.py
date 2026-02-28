@@ -8,7 +8,7 @@ from typing import Any, Optional, Sequence, Union
 
 import httpx
 
-from .llm import query_llm as _query_llm_func
+from .llm import recall_with_llm as _query_llm_func
 from .types import (
     TinyHumanError,
     BASE_URL_ENV,
@@ -116,6 +116,29 @@ class TinyHumanMemoryClient:
     def ingest_memory(
         self,
         *,
+        item: Union[MemoryItem, dict[str, Any]],
+    ) -> IngestMemoryResponse:
+        """Ingest (upsert) a single memory item.
+
+        The item is deduped by (namespace, key). If a matching item already
+        exists its content and metadata are updated; otherwise a new item is created.
+
+        Args:
+            item: A `MemoryItem` or a dict with keys: `key` (str), `content` (str),
+                `namespace` (str, required), optional `metadata` (dict),
+                optional `created_at` (float, Unix seconds), optional `updated_at` (float, Unix seconds).
+
+        Returns:
+            Counts of ingested, updated, and errored items (ingested + updated <= 1).
+
+        Raises:
+            TinyHumanError: On API errors.
+        """
+        return self.ingest_memories(items=[item])
+
+    def ingest_memories(
+        self,
+        *,
         items: Sequence[Union[MemoryItem, dict[str, Any]]],
     ) -> IngestMemoryResponse:
         """Ingest (upsert) one or more memory items.
@@ -183,32 +206,41 @@ class TinyHumanMemoryClient:
             errors=data["errors"],
         )
 
-    def get_context(
+    def recall_memory(
         self,
         *,
         namespace: str,
+        prompt: str,
+        num_chunks: int = 10,
         key: Optional[str] = None,
         keys: Optional[Sequence[str]] = None,
-        max_items: Optional[int] = None,
     ) -> GetContextResponse:
         """Get an LLM-friendly context string from stored memory.
 
-        This fetches memory items (optionally filtered) and formats them into
-        a single context string suitable for including in an LLM prompt.
+        Uses the given prompt to fetch relevant memory chunks from the namespace,
+        then formats them into a single context string for use in an LLM prompt.
 
         Args:
             namespace: Namespace scope (required).
-            key: Optional single key to include.
-            keys: Optional array of keys to include.
-            max_items: Optional maximum number of items to include.
+            prompt: Query used to retrieve relevant chunks (required).
+            num_chunks: Maximum number of chunks to retrieve (default 10).
+            key: Optional single key to include (bypasses prompt-based retrieval).
+            keys: Optional list of keys to include (bypasses prompt-based retrieval).
 
         Returns:
             Context string and the source memory items.
 
         Raises:
+            ValueError: If num_chunks is not positive.
             TinyHumanError: On API errors.
         """
-        params: list[tuple[str, str]] = [("namespace", namespace)]
+        if num_chunks < 1:
+            raise ValueError("num_chunks must be >= 1")
+        params: list[tuple[str, str]] = [
+            ("namespace", namespace),
+            ("prompt", prompt),
+            ("limit", str(num_chunks)),
+        ]
         if key:
             params.append(("key", key))
         if keys:
@@ -227,9 +259,7 @@ class TinyHumanMemoryClient:
             )
             for item in data["items"]
         ]
-
-        if max_items is not None:
-            items = items[: max(0, max_items)]
+        items = items[:num_chunks]
 
         context_parts: list[str] = []
         for it in items:
@@ -278,19 +308,25 @@ class TinyHumanMemoryClient:
         data = self._send("DELETE", "/memory", body)
         return DeleteMemoryResponse(deleted=data["deleted"])
 
-    def query_llm(
+    def recall_with_llm(
         self,
         *,
         prompt: str,
-        provider: str,
-        model: str,
+        provider: str = "openai",
+        model: str = "gpt-4o-mini",
         api_key: str,
         context: str = "",
+        namespace: Optional[str] = None,
+        num_chunks: int = 10,
         max_tokens: Optional[int] = None,
         temperature: Optional[float] = None,
         url: Optional[str] = None,
     ) -> LLMQueryResponse:
         """Optional: run a prompt through a supported LLM with optional context.
+
+        If context is not provided, calls recall_memory(namespace=..., prompt=prompt, num_chunks=...)
+        to fetch relevant chunks from memory. In that case namespace (and optionally num_chunks)
+        must be provided.
 
         Uses the provider's REST API (no extra SDK deps). Requires a separate
         API key from the LLM provider.
@@ -304,7 +340,10 @@ class TinyHumanMemoryClient:
                 For custom: any name (ignored if url is provided).
             model: Model name (e.g. "gpt-4o-mini", "claude-3-5-sonnet-20241022", "gemini-1.5-flash").
             api_key: Provider API key (not the TinyHumans token).
-            context: Optional context string (e.g. from get_context().context) injected as system/context.
+            context: Optional context string. If not provided and namespace is given,
+                context is fetched via recall_memory(namespace=namespace, prompt=prompt, num_chunks=num_chunks).
+            namespace: Optional namespace; used to fetch context when context is not provided.
+            num_chunks: Number of chunks to fetch when context is auto-fetched (default 10).
             max_tokens: Optional max tokens to generate.
             temperature: Optional sampling temperature.
             url: Optional custom API endpoint URL. If provided, uses OpenAI-compatible format
@@ -315,9 +354,21 @@ class TinyHumanMemoryClient:
             LLMQueryResponse with the model reply text.
 
         Raises:
-            ValueError: If provider is unsupported (when url not provided) or api_key missing.
+            ValueError: If context is not provided and namespace is not provided; or provider/api_key invalid.
             TinyHumanError: On provider API errors.
         """
+        if not context.strip():
+            if not namespace:
+                raise ValueError(
+                    "When context is not provided, pass namespace (and optionally num_chunks) "
+                    "so context can be fetched from memory via recall_memory."
+                )
+            ctx = self.recall_memory(
+                namespace=namespace,
+                prompt=prompt,
+                num_chunks=num_chunks,
+            )
+            context = ctx.context
         return _query_llm_func(
             prompt=prompt,
             provider=provider,

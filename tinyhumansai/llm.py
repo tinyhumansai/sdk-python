@@ -8,7 +8,7 @@ import httpx
 SUPPORTED_LLM_PROVIDERS = ("openai", "anthropic", "google")
 
 
-def query_llm(
+def recall_with_llm(
     *,
     prompt: str,
     provider: str,
@@ -33,7 +33,7 @@ def query_llm(
             For custom: any name (ignored if url is provided).
         model: Model name (e.g. "gpt-4o-mini", "claude-3-5-sonnet-20241022", "gemini-1.5-flash").
         api_key: Provider API key (not the TinyHumans token).
-        context: Optional context string (e.g. from get_context().context) injected as system/context.
+        context: Optional context string (e.g. from recall_memory().context) injected as system/context.
         max_tokens: Optional max tokens to generate.
         temperature: Optional sampling temperature.
         url: Optional custom API endpoint URL. If provided, uses OpenAI-compatible format
@@ -48,7 +48,7 @@ def query_llm(
         TinyHumanError: On provider API errors.
     """
     if not api_key or not api_key.strip():
-        raise ValueError("api_key is required for query_llm")
+        raise ValueError("api_key is required for recall_with_llm")
     api_key = api_key.strip()
 
     if url:

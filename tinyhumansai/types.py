@@ -102,6 +102,6 @@ class TinyHumanError(Exception):
 
 @dataclass
 class LLMQueryResponse:
-    """Response from query_llm (optional LLM provider integration)."""
+    """Response from recall_with_llm (optional LLM provider integration)."""
 
     text: str

@@ -23,5 +23,5 @@ include = ["tinyhumansai*", "scripts*"]
 
 [tool.ruff]
 line-length = 88
-target-version = "0.5.0"
+target-version = "py313"
 src = ["tinyhumansai", "scripts"]
