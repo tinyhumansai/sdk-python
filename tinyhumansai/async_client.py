@@ -9,10 +9,10 @@ from .client import TinyHumanMemoryClient
 from .types import (
     DeleteMemoryRequest,
     DeleteMemoryResponse,
+    GetContextRequest,
+    GetContextResponse,
     IngestMemoryRequest,
     IngestMemoryResponse,
-    ReadMemoryRequest,
-    ReadMemoryResponse,
     TinyHumanConfig,
 )
 
@@ -29,7 +29,7 @@ class AsyncTinyHumanMemoryClient:
 
     Example::
 
-        async with AsyncTinyHumanMemoryClient(TinyHumanConfig(token="...")) as client:
+        async with AsyncTinyHumanMemoryClient(TinyHumanConfig(token="...", model_id="...")) as client:
             result = await client.ingest_memory(IngestMemoryRequest(items=[...]))
     """
 
@@ -64,24 +64,12 @@ class AsyncTinyHumanMemoryClient:
             request,
         )
 
-    async def read_memory(
-        self, request: Optional[ReadMemoryRequest] = None
-    ) -> ReadMemoryResponse:
-        """Read memory items by key, keys, or namespace asynchronously.
-
-        Returns all user memory if no filters are provided.
-
-        Args:
-            request: Optional filters for the read.
-
-        Returns:
-            List of matching memory items and count.
-
-        Raises:
-            TinyHumanError: On API errors.
-        """
+    async def get_context(
+        self, request: Optional[GetContextRequest] = None
+    ) -> GetContextResponse:
+        """Get an LLM-friendly context string from stored memory asynchronously."""
         return await asyncio.to_thread(
-            self._sync_client.read_memory,
+            self._sync_client.get_context,
             request,
         )
 

@@ -19,8 +19,11 @@ class TinyHumanConfig:
     token: str
     """Bearer token (JWT or API key) for authentication."""
 
+    model_id: str
+    """Model ID sent with every request (e.g. in X-Model-Id header)."""
+
     base_url: Optional[str] = None
-    """Base URL of the backend. If None, uses TINYHUMANS_BASE_URL env var or default  URL."""
+    """Base URL of the backend. If None, uses TINYHUMANS_BASE_URL env var or default URL."""
 
 
 @dataclass
@@ -57,20 +60,6 @@ class IngestMemoryResponse:
 
 
 @dataclass
-class ReadMemoryRequest:
-    """Request payload for memory read."""
-
-    key: Optional[str] = None
-    """Single key to read."""
-
-    keys: Optional[list[str]] = None
-    """Array of keys to read."""
-
-    namespace: Optional[str] = None
-    """Namespace scope."""
-
-
-@dataclass
 class ReadMemoryItem:
     """A single memory item returned from a read."""
 
@@ -83,9 +72,27 @@ class ReadMemoryItem:
 
 
 @dataclass
-class ReadMemoryResponse:
-    """Response from memory read."""
+class GetContextRequest:
+    """Request payload for retrieving LLM context from stored memory."""
 
+    key: Optional[str] = None
+    """Single key to include."""
+
+    keys: Optional[list[str]] = None
+    """Array of keys to include."""
+
+    namespace: Optional[str] = None
+    """Namespace scope."""
+
+    max_items: Optional[int] = None
+    """Optional maximum number of items to include in the returned context."""
+
+
+@dataclass
+class GetContextResponse:
+    """Response containing an LLM-friendly context string and the source items."""
+
+    context: str
     items: list[ReadMemoryItem]
     count: int
 

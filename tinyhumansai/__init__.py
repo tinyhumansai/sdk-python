@@ -7,12 +7,12 @@ from .types import (
     TinyHumanError,
     DeleteMemoryRequest,
     DeleteMemoryResponse,
+    GetContextRequest,
+    GetContextResponse,
     IngestMemoryRequest,
     IngestMemoryResponse,
     MemoryItem,
     ReadMemoryItem,
-    ReadMemoryRequest,
-    ReadMemoryResponse,
 )
 
 __all__ = [
@@ -27,7 +27,7 @@ __all__ = [
     "IngestMemoryRequest",
     "IngestMemoryResponse",
     "MemoryItem",
+    "GetContextRequest",
+    "GetContextResponse",
     "ReadMemoryItem",
-    "ReadMemoryRequest",
-    "ReadMemoryResponse",
 ]

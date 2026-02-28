@@ -1,6 +1,8 @@
 import tinyhumansai as api
 
-client = api.TinyHumanMemoryClient(api.TinyHumanConfig(token="your-api-key"))
+client = api.TinyHumanMemoryClient(
+    api.TinyHumanConfig(token="your-api-key", model_id="your-model-id")
+)
 
 # Ingest (upsert) memory
 result = client.ingest_memory(
@@ -17,9 +19,9 @@ result = client.ingest_memory(
 )
 print(result)  # IngestMemoryResponse(ingested=1, updated=0, errors=0)
 
-# Read memory
-items = client.read_memory(api.ReadMemoryRequest(namespace="preferences"))
-print(items.count, items.items)
+# Get LLM context
+ctx = client.get_context(api.GetContextRequest(namespace="preferences"))
+print(ctx.context)
 
 # Delete by key
 client.delete_memory(

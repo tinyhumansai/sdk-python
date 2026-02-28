@@ -14,11 +14,11 @@ from .types import (
     DEFAULT_BASE_URL,
     DeleteMemoryRequest,
     DeleteMemoryResponse,
+    GetContextRequest,
+    GetContextResponse,
     IngestMemoryRequest,
     IngestMemoryResponse,
     ReadMemoryItem,
-    ReadMemoryRequest,
-    ReadMemoryResponse,
 )
 
 
@@ -32,12 +32,18 @@ class TinyHumanMemoryClient:
     def __init__(self, config: TinyHumanConfig) -> None:
         if not config.token or not config.token.strip():
             raise ValueError("token is required")
+        if not config.model_id or not config.model_id.strip():
+            raise ValueError("model_id is required")
         base_url = config.base_url or os.environ.get(BASE_URL_ENV) or DEFAULT_BASE_URL
         self._base_url = base_url.rstrip("/")
         self._token = config.token
+        self._model_id = config.model_id
         self._http = httpx.Client(
             base_url=self._base_url,
-            headers={"Authorization": f"Bearer {self._token}"},
+            headers={
+                "Authorization": f"Bearer {self._token}",
+                "X-Model-Id": self._model_id,
+            },
             timeout=30,
         )
 
@@ -89,18 +95,19 @@ class TinyHumanMemoryClient:
             errors=data["errors"],
         )
 
-    def read_memory(
-        self, request: Optional[ReadMemoryRequest] = None
-    ) -> ReadMemoryResponse:
-        """Read memory items by key, keys, or namespace.
+    def get_context(
+        self, request: Optional[GetContextRequest] = None
+    ) -> GetContextResponse:
+        """Get an LLM-friendly context string from stored memory.
 
-        Returns all user memory if no filters are provided.
+        This fetches memory items (optionally filtered) and formats them into
+        a single context string suitable for including in an LLM prompt.
 
         Args:
-            request: Optional filters for the read.
+            request: Optional filters and formatting controls.
 
         Returns:
-            List of matching memory items and count.
+            Context string and the source memory items.
 
         Raises:
             TinyHumanError: On API errors.
@@ -127,7 +134,17 @@ class TinyHumanMemoryClient:
             )
             for item in data["items"]
         ]
-        return ReadMemoryResponse(items=items, count=data["count"])
+
+        if request and request.max_items is not None:
+            items = items[: max(0, request.max_items)]
+
+        context_parts: list[str] = []
+        for it in items:
+            header = f"[{it.namespace}:{it.key}]"
+            context_parts.append(f"{header}\n{it.content}")
+        context = "\n\n".join(context_parts)
+
+        return GetContextResponse(context=context, items=items, count=len(items))
 
     def delete_memory(self, request: DeleteMemoryRequest) -> DeleteMemoryResponse:
         """Delete memory items by key, keys, or delete all.
