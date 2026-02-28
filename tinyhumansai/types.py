@@ -6,10 +6,10 @@ from dataclasses import dataclass, field
 from typing import Any, Optional
 
 
-DEFAULT_BASE_URL = "https://staging-api.alphahuman.xyz"
+DEFAULT_BASE_URL = "https://api.tinyhumans.ai"
 
 # Environment variable for base URL override (e.g. from .env)
-BASE_URL_ENV = "ALPHAHUMAN_BASE_URL"
+BASE_URL_ENV = "TINYHUMANS_BASE_URL"
 
 
 @dataclass
@@ -20,7 +20,7 @@ class TinyHumanConfig:
     """Bearer token (JWT or API key) for authentication."""
 
     base_url: Optional[str] = None
-    """Base URL of the backend. If None, uses ALPHAHUMAN_BASE_URL env var or default staging URL."""
+    """Base URL of the backend. If None, uses TINYHUMANS_BASE_URL env var or default  URL."""
 
 
 @dataclass

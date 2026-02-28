@@ -2,31 +2,27 @@
 
 from __future__ import annotations
 
-import os
-from typing import Any, Optional
+import asyncio
+from typing import Optional
 
-import httpx
-
+from .client import TinyHumanMemoryClient
 from .types import (
-    TinyHumanConfig,
-    TinyHumanError,
-    BASE_URL_ENV,
-    DEFAULT_BASE_URL,
     DeleteMemoryRequest,
     DeleteMemoryResponse,
     IngestMemoryRequest,
     IngestMemoryResponse,
-    ReadMemoryItem,
     ReadMemoryRequest,
     ReadMemoryResponse,
+    TinyHumanConfig,
 )
 
 
 class AsyncTinyHumanMemoryClient:
     """Async client for the TinyHumans memory API.
 
-    Prefer this in async runtimes (e.g. FastAPI, LangGraph async pipelines)
-    to avoid blocking the event loop.
+    Wraps the sync client and runs its methods in a thread pool so the
+    event loop is not blocked. Prefer this in async runtimes (e.g. FastAPI,
+    LangGraph async pipelines).
 
     Args:
         config: Connection configuration (token required, base_url optional).
@@ -38,22 +34,13 @@ class AsyncTinyHumanMemoryClient:
     """
 
     def __init__(self, config: TinyHumanConfig) -> None:
-        if not config.token or not config.token.strip():
-            raise ValueError("token is required")
-        base_url = config.base_url or os.environ.get(BASE_URL_ENV) or DEFAULT_BASE_URL
-        self._base_url = base_url.rstrip("/")
-        self._token = config.token
-        self._http = httpx.AsyncClient(
-            base_url=self._base_url,
-            headers={"Authorization": f"Bearer {self._token}"},
-            timeout=30,
-        )
+        self._sync_client = TinyHumanMemoryClient(config)
 
     async def close(self) -> None:
         """Close the underlying HTTP client and release connections."""
-        await self._http.aclose()
+        await asyncio.to_thread(self._sync_client.close)
 
-    async def __aenter__(self) -> "AsyncAlphahumanMemoryClient":
+    async def __aenter__(self) -> "AsyncTinyHumanMemoryClient":
         return self
 
     async def __aexit__(self, *_: object) -> None:
@@ -72,25 +59,9 @@ class AsyncTinyHumanMemoryClient:
             ValueError: If items list is empty.
             TinyHumanError: On API errors.
         """
-        if not request.items:
-            raise ValueError("items must be a non-empty list")
-
-        body = {
-            "items": [
-                {
-                    "key": item.key,
-                    "content": item.content,
-                    "namespace": item.namespace,
-                    "metadata": item.metadata,
-                }
-                for item in request.items
-            ]
-        }
-        data = await self._send("POST", "/v1/memory", body)
-        return IngestMemoryResponse(
-            ingested=data["ingested"],
-            updated=data["updated"],
-            errors=data["errors"],
+        return await asyncio.to_thread(
+            self._sync_client.ingest_memory,
+            request,
         )
 
     async def read_memory(
@@ -109,29 +80,10 @@ class AsyncTinyHumanMemoryClient:
         Raises:
             TinyHumanError: On API errors.
         """
-        params: list[tuple[str, str]] = []
-        if request:
-            if request.key:
-                params.append(("key", request.key))
-            if request.keys:
-                for k in request.keys:
-                    params.append(("keys[]", k))
-            if request.namespace:
-                params.append(("namespace", request.namespace))
-
-        data = await self._get("/v1/memory", params)
-        items = [
-            ReadMemoryItem(
-                key=item["key"],
-                content=item["content"],
-                namespace=item["namespace"],
-                metadata=item.get("metadata", {}),
-                created_at=item.get("createdAt", ""),
-                updated_at=item.get("updatedAt", ""),
-            )
-            for item in data["items"]
-        ]
-        return ReadMemoryResponse(items=items, count=data["count"])
+        return await asyncio.to_thread(
+            self._sync_client.read_memory,
+            request,
+        )
 
     async def delete_memory(self, request: DeleteMemoryRequest) -> DeleteMemoryResponse:
         """Delete memory items by key, keys, or delete all asynchronously.
@@ -146,52 +98,7 @@ class AsyncTinyHumanMemoryClient:
             ValueError: If no deletion target is specified.
             TinyHumanError: On API errors.
         """
-        has_key = isinstance(request.key, str) and len(request.key) > 0
-        has_keys = isinstance(request.keys, list) and len(request.keys) > 0
-        if not has_key and not has_keys and not request.delete_all:
-            raise ValueError('Provide "key", "keys", or set delete_all=True')
-
-        body: dict[str, Any] = {}
-        if request.key is not None:
-            body["key"] = request.key
-        if request.keys is not None:
-            body["keys"] = request.keys
-        if request.namespace is not None:
-            body["namespace"] = request.namespace
-        if request.delete_all:
-            body["deleteAll"] = True
-
-        data = await self._send("DELETE", "/v1/memory", body)
-        return DeleteMemoryResponse(deleted=data["deleted"])
-
-    # ------------------------------------------------------------------
-    # Internal helpers
-    # ------------------------------------------------------------------
-
-    async def _get(self, path: str, params: list[tuple[str, str]]) -> dict[str, Any]:
-        response = await self._http.get(path, params=params)
-        return self._parse_response(response)
-
-    async def _send(
-        self, method: str, path: str, body: dict[str, Any]
-    ) -> dict[str, Any]:
-        response = await self._http.request(method, path, json=body)
-        return self._parse_response(response)
-
-    def _parse_response(self, response: httpx.Response) -> dict[str, Any]:
-        try:
-            payload = response.json()
-        except Exception:
-            raise TinyHumanError(
-                f"HTTP {response.status_code}: non-JSON response",
-                response.status_code,
-                response.text,
-            )
-        if not response.is_success:
-            message = payload.get("error", f"HTTP {response.status_code}")
-            raise TinyHumanError(message, response.status_code, payload)
-        return payload["data"]
-
-
-# Backwards-compatible alias
-AsyncAlphahumanMemoryClient = AsyncTinyHumanMemoryClient
+        return await asyncio.to_thread(
+            self._sync_client.delete_memory,
+            request,
+        )

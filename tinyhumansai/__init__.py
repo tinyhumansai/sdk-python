@@ -1,7 +1,7 @@
 """TinyHumans Python SDK."""
 
-from .async_client import AsyncTinyHumanMemoryClient, AsyncAlphahumanMemoryClient
-from .client import TinyHumanMemoryClient, AlphahumanMemoryClient
+from .async_client import AsyncTinyHumanMemoryClient
+from .client import TinyHumanMemoryClient
 from .types import (
     TinyHumanConfig,
     TinyHumanError,
@@ -21,9 +21,6 @@ __all__ = [
     "AsyncTinyHumanMemoryClient",
     "TinyHumanConfig",
     "TinyHumanError",
-    # Backwards-compatible Alphahuman names
-    "AlphahumanMemoryClient",
-    "AsyncAlphahumanMemoryClient",
     # Shared types
     "DeleteMemoryRequest",
     "DeleteMemoryResponse",

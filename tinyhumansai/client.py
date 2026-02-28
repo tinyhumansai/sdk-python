@@ -45,7 +45,7 @@ class TinyHumanMemoryClient:
         """Close the underlying HTTP client and release connections."""
         self._http.close()
 
-    def __enter__(self) -> "AlphahumanMemoryClient":
+    def __enter__(self) -> "TinyHumanMemoryClient":
         return self
 
     def __exit__(self, *_: object) -> None:
@@ -185,7 +185,3 @@ class TinyHumanMemoryClient:
             message = payload.get("error", f"HTTP {response.status_code}")
             raise TinyHumanError(message, response.status_code, payload)
         return payload["data"]
-
-
-# Backwards-compatible alias
-AlphahumanMemoryClient = TinyHumanMemoryClient

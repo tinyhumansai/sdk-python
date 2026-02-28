@@ -81,10 +81,10 @@ asyncio.run(main())
 
 ### `TinyHumanMemoryClient(config)` / `AsyncTinyHumanMemoryClient(config)`
 
-| Param | Type | Required | Description |
-|-------|------|----------|-------------|
-| `config.token` | `str` | ✓ | JWT or API key |
-| `config.base_url` | `str` | | Override API URL. If not set, uses `ALPHAHUMAN_BASE_URL` from env (e.g. `.env`) or default `https://staging-api.alphahuman.xyz` |
+| Param             | Type  | Required | Description                                                                                                           |
+| ----------------- | ----- | -------- | --------------------------------------------------------------------------------------------------------------------- |
+| `config.token`    | `str` | ✓        | JWT or API key                                                                                                        |
+| `config.base_url` | `str` |          | Override API URL. If not set, uses `TINYHUMAN_BASE_URL` from env (e.g. `.env`) or default `https://api.tinyhumans.ai` |
 
 ### `client.ingest_memory(request)`
 
