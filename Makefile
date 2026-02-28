@@ -16,7 +16,8 @@ publish: build
 version-patch version-minor version-major:
 	@PART=$$(echo $@ | sed 's/^version-//') && \
 	VERSION=$$(uv run python scripts/bump_version.py $$PART) && \
-	git add pyproject.toml && \
+	uv lock && \
+	git add pyproject.toml uv.lock && \
 	git commit -m "Bump version to $$VERSION" && \
 	git tag -a "v$$VERSION" -m "Release v$$VERSION" && \
 	echo "Bumped to $$VERSION, committed, and tagged v$$VERSION"
