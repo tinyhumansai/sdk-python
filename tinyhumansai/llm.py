@@ -1,12 +1,9 @@
 """Optional LLM query functionality for third-party providers."""
 
 from __future__ import annotations
-
-from typing import Any, Optional
-
-import httpx
-
 from .types import LLMQueryResponse, TinyHumanError
+from typing import Any, Optional
+import httpx
 
 SUPPORTED_LLM_PROVIDERS = ("openai", "anthropic", "google")
 

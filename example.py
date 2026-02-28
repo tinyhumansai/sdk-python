@@ -1,7 +1,23 @@
-import tinyhumansai as api
+"""
+Example usage of the TinyHumans SDK.
+
+Install with examples extra for dotenv: pip install -e ".[examples]"
+Copy .env.example to .env and set TINYHUMANS_TOKEN, TINYHUMANS_MODEL_ID, OPENAI_API_KEY.
+"""
+
+import os
 import time
 
-client = api.TinyHumanMemoryClient(token="your-api-key", model_id="neocortex-mk1")
+from dotenv import load_dotenv
+
+import tinyhumansai as api
+
+load_dotenv()
+
+client = api.TinyHumanMemoryClient(
+    token=os.environ["TINYHUMANS_TOKEN"],
+    model_id=os.environ["TINYHUMANS_MODEL_ID"],
+)
 
 # Ingest (upsert) memory
 result = client.ingest_memory(
@@ -28,7 +44,7 @@ response = client.query_llm(
     prompt="What is the user's preference for theme?",
     provider="openai",
     model="gpt-4o-mini",
-    api_key="your-openai-api-key",
+    api_key=os.environ["OPENAI_API_KEY"],
     context=ctx.context,
 )
 print(response.text)
