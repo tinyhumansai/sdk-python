@@ -16,7 +16,7 @@ load_dotenv()
 
 client = api.TinyHumanMemoryClient(
     token=os.environ["TINYHUMANS_TOKEN"],
-    model_id=os.environ["TINYHUMANS_MODEL_ID"],
+    model_id="neocortex-mk1",
 )
 
 # Ingest (upsert) memory
@@ -60,7 +60,7 @@ print(response.text)
 # )
 
 # Delete by key
-client.delete_memory(key="user-preference-theme", namespace="preferences")
+client.delete_memory(namespace="preferences", key="user-preference-theme")
 
-# Delete all user memory
-client.delete_memory(delete_all=True)
+# Delete all memory in namespace
+client.delete_memory(namespace="preferences", delete_all=True)

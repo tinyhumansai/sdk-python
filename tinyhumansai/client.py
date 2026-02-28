@@ -126,7 +126,7 @@ class TinyHumanMemoryClient:
 
         Args:
             items: Items to upsert. Each item can be a `MemoryItem` or a dict with
-                keys: `key` (str), `content` (str), optional `namespace` (str),
+                keys: `key` (str), `content` (str), `namespace` (str, required),
                 optional `metadata` (dict), optional `created_at` (float, Unix seconds),
                 optional `updated_at` (float, Unix seconds).
 
@@ -159,10 +159,12 @@ class TinyHumanMemoryClient:
                 created_at = item.get("createdAt") or item.get("created_at")
                 updated_at = item.get("updatedAt") or item.get("updated_at")
                 _validate_timestamps(created_at, updated_at)
+                if "namespace" not in item:
+                    raise ValueError("items: each dict must include 'namespace'")
                 item_dict = {
                     "key": item["key"],
                     "content": item["content"],
-                    "namespace": item.get("namespace", "default"),
+                    "namespace": item["namespace"],
                     "metadata": item.get("metadata", {}),
                 }
                 if created_at is not None:
@@ -184,9 +186,9 @@ class TinyHumanMemoryClient:
     def get_context(
         self,
         *,
+        namespace: str,
         key: Optional[str] = None,
         keys: Optional[Sequence[str]] = None,
-        namespace: Optional[str] = None,
         max_items: Optional[int] = None,
     ) -> GetContextResponse:
         """Get an LLM-friendly context string from stored memory.
@@ -195,9 +197,9 @@ class TinyHumanMemoryClient:
         a single context string suitable for including in an LLM prompt.
 
         Args:
+            namespace: Namespace scope (required).
             key: Optional single key to include.
             keys: Optional array of keys to include.
-            namespace: Optional namespace scope.
             max_items: Optional maximum number of items to include.
 
         Returns:
@@ -206,14 +208,12 @@ class TinyHumanMemoryClient:
         Raises:
             TinyHumanError: On API errors.
         """
-        params: list[tuple[str, str]] = []
+        params: list[tuple[str, str]] = [("namespace", namespace)]
         if key:
             params.append(("key", key))
         if keys:
             for k in keys:
                 params.append(("keys[]", k))
-        if namespace:
-            params.append(("namespace", namespace))
 
         data = self._get("/memory", params)
         items = [
@@ -242,18 +242,18 @@ class TinyHumanMemoryClient:
     def delete_memory(
         self,
         *,
+        namespace: str,
         key: Optional[str] = None,
         keys: Optional[Sequence[str]] = None,
-        namespace: Optional[str] = None,
         delete_all: bool = False,
     ) -> DeleteMemoryResponse:
         """Delete memory items by key, keys, or delete all.
 
         Args:
+            namespace: Namespace scope (required).
             key: Optional single key to delete.
             keys: Optional array of keys to delete.
-            namespace: Optional namespace scope.
-            delete_all: If true, delete all memory (optionally scoped by namespace).
+            delete_all: If true, delete all memory in this namespace.
 
         Returns:
             Count of deleted items.
@@ -267,13 +267,11 @@ class TinyHumanMemoryClient:
         if not has_key and not has_keys and not delete_all:
             raise ValueError('Provide "key", "keys", or set delete_all=True')
 
-        body: dict[str, Any] = {}
+        body: dict[str, Any] = {"namespace": namespace}
         if key is not None:
             body["key"] = key
         if keys is not None:
             body["keys"] = list(keys)
-        if namespace is not None:
-            body["namespace"] = namespace
         if delete_all:
             body["deleteAll"] = True
 

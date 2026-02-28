@@ -36,8 +36,8 @@ class MemoryItem:
     content: str
     """Memory content text."""
 
-    namespace: str = "default"
-    """Namespace to scope this item."""
+    namespace: str
+    """Namespace to scope this item (required)."""
 
     metadata: dict[str, Any] = field(default_factory=dict)
     """Arbitrary metadata."""
