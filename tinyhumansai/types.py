@@ -87,3 +87,15 @@ class TinyHumanError(Exception):
         super().__init__(message)
         self.status = status
         self.body = body
+
+
+# ---------------------------------------------------------------------------
+# Optional LLM query (third-party providers)
+# ---------------------------------------------------------------------------
+
+
+@dataclass
+class LLMQueryResponse:
+    """Response from query_llm (optional LLM provider integration)."""
+
+    text: str

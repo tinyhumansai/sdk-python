@@ -19,6 +19,27 @@ print(result)  # IngestMemoryResponse(ingested=1, updated=0, errors=0)
 ctx = client.get_context(namespace="preferences")
 print(ctx.context)
 
+# (Optional) Query LLM with context (use your own API key from the provider)
+# Built-in providers: "openai", "anthropic", "google"
+response = client.query_llm(
+    prompt="What is the user's preference for theme?",
+    provider="openai",
+    model="gpt-4o-mini",
+    api_key="your-openai-api-key",
+    context=ctx.context,
+)
+print(response.text)
+
+# Custom provider (OpenAI-compatible API)
+# response = client.query_llm(
+#     prompt="What is the user's preference for theme?",
+#     provider="custom",
+#     model="your-model-name",
+#     api_key="your-api-key",
+#     url="https://api.example.com/v1/chat/completions",
+#     context=ctx.context,
+# )
+
 # Delete by key
 client.delete_memory(key="user-preference-theme", namespace="preferences")
 
