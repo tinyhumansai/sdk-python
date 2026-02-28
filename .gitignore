@@ -26,6 +26,9 @@ htmlcov/
 # Ruff
 .ruff_cache/
 
+# Act (local workflow testing)
+.act-secrets
+
 # Editors
 .DS_Store
 .idea/

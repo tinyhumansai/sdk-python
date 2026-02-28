@@ -14,8 +14,13 @@ dependencies = ["httpx>=0.25"]
 [project.optional-dependencies]
 dev = ["pytest", "pytest-asyncio", "mypy", "ruff"]
 
+[project.scripts]
+run-act-publish = "scripts.run_act_publish:main"
+
+[tool.setuptools.packages.find]
+include = ["tinyhumansai*", "scripts*"]
+
 [tool.ruff]
 line-length = 88
 target-version = "py39"
-src = ["tinyhumansai", "alphahuman_memory"]
-
+src = ["tinyhumansai", "alphahuman_memory", "scripts"]
