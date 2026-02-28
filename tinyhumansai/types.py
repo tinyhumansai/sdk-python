@@ -44,13 +44,6 @@ class MemoryItem:
 
 
 @dataclass
-class IngestMemoryRequest:
-    """Request payload for memory ingestion."""
-
-    items: list[MemoryItem]
-
-
-@dataclass
 class IngestMemoryResponse:
     """Response from memory ingestion."""
 
@@ -72,46 +65,12 @@ class ReadMemoryItem:
 
 
 @dataclass
-class GetContextRequest:
-    """Request payload for retrieving LLM context from stored memory."""
-
-    key: Optional[str] = None
-    """Single key to include."""
-
-    keys: Optional[list[str]] = None
-    """Array of keys to include."""
-
-    namespace: Optional[str] = None
-    """Namespace scope."""
-
-    max_items: Optional[int] = None
-    """Optional maximum number of items to include in the returned context."""
-
-
-@dataclass
 class GetContextResponse:
     """Response containing an LLM-friendly context string and the source items."""
 
     context: str
     items: list[ReadMemoryItem]
     count: int
-
-
-@dataclass
-class DeleteMemoryRequest:
-    """Request payload for memory deletion."""
-
-    key: Optional[str] = None
-    """Single key to delete."""
-
-    keys: Optional[list[str]] = None
-    """Array of keys to delete."""
-
-    namespace: Optional[str] = None
-    """Namespace scope (default: 'default')."""
-
-    delete_all: bool = False
-    """Delete all memory for the user (optionally scoped by namespace)."""
 
 
 @dataclass

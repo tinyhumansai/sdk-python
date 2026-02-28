@@ -3,17 +3,14 @@
 from __future__ import annotations
 
 import asyncio
-from typing import Optional
+from typing import Any, Optional, Sequence, Union
 
 from .client import TinyHumanMemoryClient
 from .types import (
-    DeleteMemoryRequest,
     DeleteMemoryResponse,
-    GetContextRequest,
     GetContextResponse,
-    IngestMemoryRequest,
     IngestMemoryResponse,
-    TinyHumanConfig,
+    MemoryItem,
 )
 
 
@@ -29,12 +26,17 @@ class AsyncTinyHumanMemoryClient:
 
     Example::
 
-        async with AsyncTinyHumanMemoryClient(TinyHumanConfig(token="...", model_id="...")) as client:
-            result = await client.ingest_memory(IngestMemoryRequest(items=[...]))
+        async with AsyncTinyHumanMemoryClient(token="...", model_id="...") as client:
+            result = await client.ingest_memory(items=[{"key": "...", "content": "..."}])
     """
 
-    def __init__(self, config: TinyHumanConfig) -> None:
-        self._sync_client = TinyHumanMemoryClient(config)
+    def __init__(
+        self,
+        token: str,
+        model_id: str,
+        base_url: Optional[str] = None,
+    ) -> None:
+        self._sync_client = TinyHumanMemoryClient(token=token, model_id=model_id, base_url=base_url)
 
     async def close(self) -> None:
         """Close the underlying HTTP client and release connections."""
@@ -46,7 +48,11 @@ class AsyncTinyHumanMemoryClient:
     async def __aexit__(self, *_: object) -> None:
         await self.close()
 
-    async def ingest_memory(self, request: IngestMemoryRequest) -> IngestMemoryResponse:
+    async def ingest_memory(
+        self,
+        *,
+        items: Sequence[Union[MemoryItem, dict[str, Any]]],
+    ) -> IngestMemoryResponse:
         """Ingest (upsert) one or more memory items asynchronously.
 
         Args:
@@ -61,19 +67,34 @@ class AsyncTinyHumanMemoryClient:
         """
         return await asyncio.to_thread(
             self._sync_client.ingest_memory,
-            request,
+            items=items,
         )
 
     async def get_context(
-        self, request: Optional[GetContextRequest] = None
+        self,
+        *,
+        key: Optional[str] = None,
+        keys: Optional[Sequence[str]] = None,
+        namespace: Optional[str] = None,
+        max_items: Optional[int] = None,
     ) -> GetContextResponse:
         """Get an LLM-friendly context string from stored memory asynchronously."""
         return await asyncio.to_thread(
             self._sync_client.get_context,
-            request,
+            key=key,
+            keys=keys,
+            namespace=namespace,
+            max_items=max_items,
         )
 
-    async def delete_memory(self, request: DeleteMemoryRequest) -> DeleteMemoryResponse:
+    async def delete_memory(
+        self,
+        *,
+        key: Optional[str] = None,
+        keys: Optional[Sequence[str]] = None,
+        namespace: Optional[str] = None,
+        delete_all: bool = False,
+    ) -> DeleteMemoryResponse:
         """Delete memory items by key, keys, or delete all asynchronously.
 
         Args:
@@ -88,5 +109,8 @@ class AsyncTinyHumanMemoryClient:
         """
         return await asyncio.to_thread(
             self._sync_client.delete_memory,
-            request,
+            key=key,
+            keys=keys,
+            namespace=namespace,
+            delete_all=delete_all,
         )
